@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Catering Slideshow</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #1a0e08;
+    font-family: Georgia, 'Times New Roman', serif;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Loading screen */
+  #loading {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #1a0e08;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+  #loading p {
+    color: #D4832A;
+    font-family: Arial, sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(212,131,42,0.2);
+    border-top-color: #D4832A;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error screen */
+  #error-screen {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #FDF6EC;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 40px;
+    text-align: center;
+  }
+  #error-screen h1 { font-size: 32px; color: #5C3D2E; }
+  #error-screen p  { font-size: 16px; color: #C4714A; max-width: 500px; line-height: 1.8; font-family: Arial, sans-serif; }
+  #error-screen code { background: #5C3D2E; color: #EDD9BE; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-family: 'Courier New', monospace; }
+
+  /* Slideshow */
+  #slideshow {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    background: #1a0e08;
+    display: none;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: flex-end;
+    opacity: 0;
+    -webkit-transition: opacity 1.2s ease;
+    transition: opacity 1.2s ease;
+  }
+  .slide.active { opacity: 1; }
+
+  .slide-bg {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-color: #1a0e08;
+  }
+
+  .slide-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: -webkit-linear-gradient(bottom, rgba(15,7,3,0.93) 0%, rgba(15,7,3,0.5) 30%, rgba(15,7,3,0.05) 60%, transparent 100%);
+    background: linear-gradient(to top, rgba(15,7,3,0.93) 0%, rgba(15,7,3,0.5) 30%, rgba(15,7,3,0.05) 60%, transparent 100%);
+  }
+
+  .slide-info {
+    position: relative;
+    width: 100%;
+    padding: 48px 72px 80px 72px;
+    z-index: 2;
+  }
+
+  .slide-tag {
+    display: block;
+    font-size: 14px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #D4832A;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: normal;
+    margin-bottom: 14px;
+  }
+
+  .slide-title {
+    font-size: 56px;
+    color: #FDF6EC;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    text-shadow: 0 2px 24px rgba(0,0,0,0.5);
+  }
+
+  .divider {
+    width: 52px;
+    height: 2px;
+    background: #D4832A;
+    margin-bottom: 16px;
+  }
+
+  .slide-desc {
+    font-size: 20px;
+    color: rgba(237,217,190,0.9);
+    line-height: 1.75;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: normal;
+    max-width: 600px;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.6);
+  }
+
+  #progress-bar {
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 4px;
+    background: #D4832A;
+    width: 0%;
+    z-index: 20;
+  }
+
+  #clock {
+    position: absolute;
+    top: 36px; left: 48px;
+    color: rgba(255,255,255,0.45);
+    font-size: 15px;
+    letter-spacing: 3px;
+    font-family: Arial, Helvetica, sans-serif;
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <p>Loading photos...</p>
+</div>
+
+<div id="error-screen">
+  <h1>images.json not found</h1>
+  <p>Make sure <code>images.json</code> is in the same folder as this file and lists your photo filenames.</p>
+  <p>Example <code>images.json</code>:</p>
+  <code>["photo01.jpg", "photo02.jpg", "photo03.jpg"]</code>
+</div>
+
+<div id="slideshow">
+  <div id="clock"></div>
+  <div id="progress-bar"></div>
+</div>
+
+<script>
+var SLIDE_DURATION = 6000; // ms per slide — change here if needed
+
+var CAPTIONS = [
+  { tag: "OUR SERVICES",  title: "Crafted with Love",      desc: "Every dish prepared fresh, with ingredients chosen for flavor and quality." },
+  { tag: "CATERING",      title: "Events to Remember",     desc: "From intimate gatherings to grand celebrations — we handle every detail." },
+  null,
+  { tag: "MENU",          title: "Flavors that Delight",   desc: "A menu built around taste, tradition, and the joy of sharing a great meal." },
+  { tag: "PRESENTATION",  title: "Beautiful Presentation", desc: "We believe food should be as beautiful to look at as it is delicious to eat." },
+  null,
+  null,
+];
+
+var currentIndex = 0;
+var timer = null;
+var barStart = null;
+var barFrame = null;
+
+// Load images.json then start
+fetch('photos/images.json')
+  .then(function(r) {
+    if (!r.ok) throw new Error('not found');
+    return r.json();
+  })
+  .then(function(files) {
+    if (!files || files.length === 0) throw new Error('empty');
+    init(files);
+  })
+  .catch(function() {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error-screen').style.display = 'flex';
+  });
+
+function init(files) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('slideshow').style.display = 'block';
+  buildSlides(files);
+  showSlide(0);
+  startClock();
+}
+
+function buildSlides(files) {
+  var ss = document.getElementById('slideshow');
+  for (var i = 0; i < files.length; i++) {
+    var cap = CAPTIONS[i % CAPTIONS.length];
+    var slide = document.createElement('div');
+    slide.className = 'slide';
+
+    var bg = document.createElement('div');
+    bg.className = 'slide-bg';
+    bg.style.backgroundImage = "url('photos/" + files[i] + "')";
+    slide.appendChild(bg);
+
+    if (cap) {
+      var overlay = document.createElement('div');
+      overlay.className = 'slide-overlay';
+      slide.appendChild(overlay);
+
+      var info = document.createElement('div');
+      info.className = 'slide-info';
+      info.innerHTML =
+        '<span class="slide-tag">' + cap.tag + '</span>' +
+        '<div class="slide-title">' + cap.title + '</div>' +
+        '<div class="divider"></div>' +
+        '<p class="slide-desc">' + cap.desc + '</p>';
+      slide.appendChild(info);
+    }
+
+    ss.appendChild(slide);
+  }
+}
+
+function showSlide(index) {
+  var slides = document.querySelectorAll('.slide');
+  for (var i = 0; i < slides.length; i++) slides[i].className = 'slide';
+  slides[index].className = 'slide active';
+  currentIndex = index;
+  startProgressBar();
+  clearTimeout(timer);
+  timer = setTimeout(nextSlide, SLIDE_DURATION);
+}
+
+function nextSlide() {
+  showSlide((currentIndex + 1) % document.querySelectorAll('.slide').length);
+}
+
+function startProgressBar() {
+  var bar = document.getElementById('progress-bar');
+  if (barFrame) cancelAnimationFrame(barFrame);
+  bar.style.width = '0%';
+  barStart = null;
+  function animate(ts) {
+    if (!barStart) barStart = ts;
+    var pct = Math.min(100, ((ts - barStart) / SLIDE_DURATION) * 100);
+    bar.style.width = pct + '%';
+    if (pct < 100) barFrame = requestAnimationFrame(animate);
+  }
+  barFrame = requestAnimationFrame(animate);
+}
+
+function startClock() {
+  function tick() {
+    var now = new Date();
+    var h = now.getHours();
+    var m = now.getMinutes();
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    document.getElementById('clock').innerHTML = h + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+document.getElementById('slideshow').onclick = function() {
+  clearTimeout(timer);
+  if (barFrame) cancelAnimationFrame(barFrame);
+  nextSlide();
+};
+</script>
+</body>
+</html>
