@@ -69,8 +69,6 @@
   .slide {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    display: flex;
-    align-items: flex-end;
     opacity: 0;
     -webkit-transition: opacity 1s ease;
     transition: opacity 1s ease;
@@ -84,56 +82,6 @@
     background-repeat: no-repeat;
     background-position: center center;
     background-color: #1a0e08;
-  }
-
-  .slide-overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: -webkit-linear-gradient(bottom, rgba(15,7,3,0.93) 0%, rgba(15,7,3,0.5) 30%, rgba(15,7,3,0.05) 60%, transparent 100%);
-    background: linear-gradient(to top, rgba(15,7,3,0.93) 0%, rgba(15,7,3,0.5) 30%, rgba(15,7,3,0.05) 60%, transparent 100%);
-  }
-
-  .slide-info {
-    position: relative;
-    width: 100%;
-    padding: 48px 72px 40px 72px;
-    z-index: 2;
-  }
-
-  .slide-tag {
-    display: block;
-    font-size: 14px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    color: #D4832A;
-    font-family: Arial, Helvetica, sans-serif;
-    font-weight: normal;
-    margin-bottom: 14px;
-  }
-
-  .slide-title {
-    font-size: 35px;
-    color: #FDF6EC;
-    line-height: 1.1;
-    margin-bottom: 16px;
-    text-shadow: 0 2px 24px rgba(0,0,0,0.5);
-  }
-
-  .divider {
-    width: 52px;
-    height: 2px;
-    background: #D4832A;
-    margin-bottom: 16px;
-  }
-
-  .slide-desc {
-    font-size: 16px;
-    color: rgba(237,217,190,0.9);
-    line-height: 1.75;
-    font-family: Arial, Helvetica, sans-serif;
-    font-weight: normal;
-    max-width: 600px;
-    text-shadow: 0 1px 8px rgba(0,0,0,0.6);
   }
 
   #progress-bar {
@@ -178,16 +126,6 @@
 <script>
 var SLIDE_DURATION = 4000; // ms per slide — change here if needed
 
-var CAPTIONS = [
-  { tag: "OUR SERVICES",  title: "Crafted with Love",      desc: "Every dish prepared fresh, with ingredients chosen for flavor and quality." },
-  { tag: "CATERING",      title: "Events to Remember",     desc: "From intimate gatherings to grand celebrations — we handle every detail." },
-  null,
-  { tag: "MENU",          title: "Flavors that Delight",   desc: "A menu built around taste, tradition, and the joy of sharing a great meal." },
-  { tag: "PRESENTATION",  title: "Beautiful Presentation", desc: "We believe food should be as beautiful to look at as it is delicious to eat." },
-  null,
-  null,
-];
-
 var currentIndex = 0;
 var timer = null;
 var barStart = null;
@@ -219,7 +157,6 @@ function init(files) {
 function buildSlides(files) {
   var ss = document.getElementById('slideshow');
   for (var i = 0; i < files.length; i++) {
-    var cap = CAPTIONS[i % CAPTIONS.length];
     var slide = document.createElement('div');
     slide.className = 'slide';
 
@@ -227,21 +164,6 @@ function buildSlides(files) {
     bg.className = 'slide-bg';
     bg.style.backgroundImage = "url('photos/" + files[i] + "')";
     slide.appendChild(bg);
-
-    if (cap) {
-      var overlay = document.createElement('div');
-      overlay.className = 'slide-overlay';
-      slide.appendChild(overlay);
-
-      var info = document.createElement('div');
-      info.className = 'slide-info';
-      info.innerHTML =
-        '<span class="slide-tag">' + cap.tag + '</span>' +
-        '<div class="slide-title">' + cap.title + '</div>' +
-        '<div class="divider"></div>' +
-        '<p class="slide-desc">' + cap.desc + '</p>';
-      slide.appendChild(info);
-    }
 
     ss.appendChild(slide);
   }
